@@ -19,4 +19,8 @@ typedef enum {
 #define le_dword(a) (a)
 #define le_word(a) (a)
 
+#define align_down(x, y) ((x) & ~((y) - 1))
+#define align_up(x, y) ((((y) - 1) + (x)) & ~((y) - 1))
+#define is_aligned(x, y) (((x) & ((y) - 1)) == 0)
+
 #endif

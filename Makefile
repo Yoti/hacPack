@@ -4,6 +4,7 @@ include config.mk
 
 INCLUDE = -I ./mbedtls/include
 LIBDIR = ./mbedtls/library
+CFLAGS += -Wno-implicit-fallthrough -Wno-missing-braces
 CFLAGS += -D_BSD_SOURCE -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200112L -D_DEFAULT_SOURCE -D__USE_MINGW_ANSI_STDIO=1 -D_FILE_OFFSET_BITS=64
 
 all:

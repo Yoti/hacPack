@@ -11,7 +11,7 @@ void ticket_create_cert(hp_settings_t *settings)
     filepath_t cert_path;
     filepath_init(&cert_path);
     filepath_copy(&cert_path, &settings->out_dir);
-    filepath_append(&cert_path, "%016" PRIx64 "000000000000000%i.cert", settings->title_id, settings->keygeneration);
+    filepath_append(&cert_path, "%016" PRIx64 "%016" PRIx8 ".cert", settings->title_id, (uint8_t)settings->keygeneration);
     printf("Creating cert %s\n", cert_path.char_path);
     FILE *file;
     if (!(file = os_fopen(cert_path.os_path, OS_MODE_WRITE)))
@@ -28,7 +28,7 @@ void ticket_create_tik(hp_settings_t *settings)
     filepath_t tik_path;
     filepath_init(&tik_path);
     filepath_copy(&tik_path, &settings->out_dir);
-    filepath_append(&tik_path, "%016" PRIx64 "000000000000000%i.tik", settings->title_id, settings->keygeneration);
+    filepath_append(&tik_path, "%016" PRIx64 "%016" PRIx8 ".tik", settings->title_id, (uint8_t)settings->keygeneration);
 
     // Encrypting title key
     printf("Encrypting Titlekey\n");

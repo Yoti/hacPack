@@ -1,0 +1,10 @@
+/config.mk
+/hacpack.exe
+/hacpack
+*.o
+*.so
+*.so.*
+*.a
+*.dll
+*.lib
+*.pyc

@@ -8,8 +8,6 @@
 
 #include "types.h"
 
-#define MAX_FS_ENTRIES 0x10 //If ever needed, this constant and the size of stringtable can be increased.
-
 int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *out_pfs0_size)
 {
 #if __MINGW32__
@@ -30,16 +28,17 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
     uint64_t filedata_reloffset = 0;
 
     pfs0_header_t header;
-    pfs0_file_entry_t fsentries[MAX_FS_ENTRIES];
-    pfs0_file_entry_t *fsentry;
+    pfs0_file_entry_t *fsentries = NULL, *tmp_fsentries = NULL;
+    pfs0_file_entry_t *fsentry = NULL;
 
     char objpath[4351];
 
-    char stringtable[0x200];
+    char *stringtable = NULL, *tmp_stringtable = NULL;
+    
+    uint8_t padding[0x20];
+    memset(padding, 0, sizeof(padding));
 
     memset(&header, 0, sizeof(header));
-    memset(fsentries, 0, sizeof(fsentries));
-    memset(stringtable, 0, sizeof(stringtable));
 
     filepath_t in_dirpath_cpy;
     filepath_init(&in_dirpath_cpy);
@@ -82,13 +81,18 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
         }
         else if ((objstats.st_mode & S_IFMT) == S_IFREG) //file
         {
-            if (objcount >= MAX_FS_ENTRIES)
+            tmp_fsentries = realloc(fsentries, (objcount + 1) * sizeof(pfs0_file_entry_t));
+            if (!tmp_fsentries)
             {
-                printf("Maximum fs object count already reached.\n");
+                printf("Failed to reallocate fsentries.\n");
                 exit(EXIT_FAILURE);
             }
 
+            fsentries = tmp_fsentries;
+            tmp_fsentries = NULL;
+
             fsentry = &fsentries[objcount];
+            memset(fsentry, 0, sizeof(pfs0_file_entry_t));
 
             fsentry->offset = filedata_reloffset;
             fsentry->size = objstats.st_size;
@@ -96,15 +100,20 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
             fsentry->string_table_offset = stringtable_offset;
 
             tmplen = strlen(cur_dirent->d_name) + 1;
-            if (stringtable_offset + tmplen > sizeof(stringtable))
+
+            tmp_stringtable = realloc(stringtable, stringtable_offset + tmplen);
+            if (!tmp_stringtable)
             {
-                printf("Max size of stringtable reached.\n");
+                printf("Failed to reallocate stringtable.\n");
                 exit(EXIT_FAILURE);
             }
 
-            strncpy(&stringtable[stringtable_offset], cur_dirent->d_name, sizeof(stringtable) - stringtable_offset);
-            stringtable_offset += tmplen;
+            stringtable = tmp_stringtable;
+            tmp_stringtable = NULL;
 
+            snprintf(&stringtable[stringtable_offset], tmplen, "%s", cur_dirent->d_name);
+
+            stringtable_offset += tmplen;
             objcount++;
         }
         else
@@ -116,10 +125,14 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
 
     closedir(dir);
 
+    if (!objcount)
+    {
+        printf("Input directory is empty!\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (ret == 0)
     {
-        stringtable_offset = (stringtable_offset + 0x1f) & ~0x1f;
-
         header.magic = le_word(0x30534650);
         header.num_files = le_word(objcount);
         header.string_table_size = le_word(stringtable_offset);
@@ -127,6 +140,12 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
         fwrite(&header, 1, sizeof(header), fout);
         fwrite(fsentries, 1, sizeof(pfs0_file_entry_t) * objcount, fout);
         fwrite(stringtable, 1, stringtable_offset, fout);
+
+        // Write padding
+        uint64_t full_header_size = (sizeof(header) + (sizeof(pfs0_file_entry_t) * objcount) + stringtable_offset);
+        uint64_t aligned_full_header_size = (is_aligned(full_header_size, 0x20) ? align_up(full_header_size + 1, 0x20) : align_up(full_header_size, 0x20));
+        uint64_t header_padding_size = (aligned_full_header_size - full_header_size);
+        fwrite(padding, 1, header_padding_size, fout);
 
         stringtable_offset = 0;
 
@@ -140,13 +159,6 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
                 break;
             }
             tmplen++;
-
-            if (stringtable_offset + tmplen > sizeof(stringtable))
-            {
-                printf("Max size of stringtable reached during stringtable entry reading.\n");
-                ret = 4;
-                break;
-            }
 
             memset(objpath, 0, sizeof(objpath));
             snprintf(objpath, sizeof(objpath) - 1, "%s%s", in_dirpath_cpy.char_path, &stringtable[stringtable_offset]);
@@ -191,6 +203,8 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
 
     *out_pfs0_size = (uint64_t)ftello64(fout);
 
+    free(stringtable);
+    free(fsentries);
     fclose(fout);
 
     return ret;
