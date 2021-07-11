@@ -54,7 +54,7 @@ Program NCA options:
 --acidsigprivatekey      Set private key filepath for signing acid with PEM format  
 --ncasig2privatekey      Set private key filepath for signing nca signature 2 with PEM format  
 --ncasig2modulus         Set modulus filepath for signing nca signature 2  
---nosignncasig2          Skip patching acid public key in npdm and signing nca header with self-signed keys  
+--noselfsignncasig2      Skip patching acid public key in npdm and signing nca header with self-signed keys  
 Control NCA options:  
 --romfsdir               Set control romfs directory path  
 Manual NCA options:  

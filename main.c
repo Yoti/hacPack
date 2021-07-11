@@ -46,7 +46,7 @@ static void usage(void)
             "--acidsigprivatekey      Set private key filepath for signing acid with PEM format\n"
             "--ncasig2privatekey      Set private key filepath for signing nca signature 2 with PEM format\n"
             "--ncasig2modulus         Set modulus filepath for signing nca signature 2\n"
-            "--nosignncasig2          Skip patching acid public key in npdm and signing nca header with self-signed keys\n"
+            "--noselfsignncasig2      Skip patching acid public key in npdm and signing nca header with self-signed keys\n"
             "Control NCA options:\n"
             "--romfsdir               Set control romfs directory path\n"
             "Manual NCA options:\n"

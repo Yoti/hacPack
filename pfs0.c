@@ -133,19 +133,18 @@ int pfs0_build(filepath_t *in_dirpath, filepath_t *out_pfs0_filepath, uint64_t *
 
     if (ret == 0)
     {
+        uint64_t full_header_size = (sizeof(header) + (sizeof(pfs0_file_entry_t) * objcount) + stringtable_offset);
+        uint64_t aligned_full_header_size = (is_aligned(full_header_size, 0x20) ? align_up(full_header_size + 1, 0x20) : align_up(full_header_size, 0x20));
+        uint64_t header_padding_size = (aligned_full_header_size - full_header_size);
+
         header.magic = le_word(0x30534650);
         header.num_files = le_word(objcount);
-        header.string_table_size = le_word(stringtable_offset);
+        header.string_table_size = le_word(stringtable_offset + header_padding_size);
 
         fwrite(&header, 1, sizeof(header), fout);
         fwrite(fsentries, 1, sizeof(pfs0_file_entry_t) * objcount, fout);
         fwrite(stringtable, 1, stringtable_offset, fout);
-
-        // Write padding
-        uint64_t full_header_size = (sizeof(header) + (sizeof(pfs0_file_entry_t) * objcount) + stringtable_offset);
-        uint64_t aligned_full_header_size = (is_aligned(full_header_size, 0x20) ? align_up(full_header_size + 1, 0x20) : align_up(full_header_size, 0x20));
-        uint64_t header_padding_size = (aligned_full_header_size - full_header_size);
-        fwrite(padding, 1, header_padding_size, fout);
+        if (header_padding_size) fwrite(padding, 1, header_padding_size, fout);
 
         stringtable_offset = 0;
 
