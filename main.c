@@ -278,7 +278,7 @@ int main(int argc, char **argv)
             }
             break;
         case 17:
-            settings.sdk_version = strtoul(optarg, NULL, 16);
+            settings.sdk_version = strtoul(optarg, NULL, 0);
             // Validating SDK Version
             if (settings.sdk_version < 0x000B0000)
             {
@@ -292,7 +292,7 @@ int main(int argc, char **argv)
             parse_hex_key(settings.keyareakey, optarg, 0x10);
             break;
         case 19:
-            settings.title_id = strtoull(optarg, NULL, 16);
+            settings.title_id = strtoull(optarg, NULL, 0);
             break;
         case 20:
             filepath_set(&settings.datanca, optarg);
@@ -307,7 +307,7 @@ int main(int argc, char **argv)
             parse_hex_key(settings.digest, optarg, 0x20);
             break;
         case 24:
-            settings.title_version = strtoul(optarg, NULL, 16);
+            settings.title_version = strtoul(optarg, NULL, 0);
             break;
         case 25:
             filepath_set(&settings.cnmt, optarg);
